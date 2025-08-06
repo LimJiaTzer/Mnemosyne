@@ -3,26 +3,54 @@ import RealityKit
 import RealityKitContent
 import ARKit
 
+// MARK: - App-wide State Management
+
 // Enum to manage the different states of the application
 enum GameState {
     case menu
     case game
 }
 
+// Enum to define the difficulty levels, now with associated colors
+enum Difficulty: String, CaseIterable {
+    case easy = "Easy"
+    case medium = "Medium"
+    case hard = "Hard"
+
+    // Computed property to return a color for each difficulty
+    var color: Color {
+        switch self {
+        case .easy:
+            return .green
+        case .medium:
+            return .orange
+        case .hard:
+            return .red
+        }
+    }
+}
+
+// An observable object to hold shared settings that can be accessed by any view
+@Observable
+class GameSettings {
+    var difficulty: Difficulty = .easy
+}
+
+// MARK: - Main Content View
 struct ContentView: View {
     // State variable to control the current view being displayed
     @State private var gameState: GameState = .menu
-    // State variable to control the presentation of the rules sheet
-    @State private var showingRules: Bool = false
+    // State object to hold the game's settings
+    @State private var gameSettings = GameSettings()
 
     var body: some View {
         // Use a switch statement to display the appropriate view based on the game state
         switch gameState {
         case .menu:
-            // Pass the state bindings to the main menu view
+            // Pass the state bindings and environment object to the main menu view
             MainMenuView(
                 gameState: $gameState,
-                showingRules: $showingRules
+                gameSettings: gameSettings
             )
         case .game:
             GameView(gameState: $gameState) // Pass binding to allow returning to menu
@@ -33,26 +61,42 @@ struct ContentView: View {
 // MARK: - Main Menu View
 struct MainMenuView: View {
     @Binding var gameState: GameState
-    @Binding var showingRules: Bool
+    // Access the shared settings from the environment
+    var gameSettings: GameSettings
+    
+    // State for presenting sheets
+    @State private var showingRules: Bool = false
+    @State private var showingSettings: Bool = false
 
     var body: some View {
         VStack(spacing: 40) {
-            Text("🧠 Mnemosyne")
+            // The title's color now changes based on the selected difficulty
+            Text("🐣Mnemosyne🧠")
                 .font(.system(size: 52, weight: .bold))
+                .foregroundColor(.white)
+                .animation(.easeInOut, value: gameSettings.difficulty) // Animate the color change
 
 
             VStack(spacing: 20) {
-                // BUG FIX: Use .buttonStyle and .tint for modern, filled buttons
                 Button(action: { gameState = .game }) {
                     Text("Start Game")
                         .font(.title2)
                         .frame(width: 200)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .tint(.green)
 
                 Button(action: { showingRules = true }) {
                     Text("Rules")
+                        .font(.title2)
+                        .frame(width: 200)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.brown)
+                
+                // New button to open the Settings sheet
+                Button(action: { showingSettings = true }) {
+                    Text("Settings")
                         .font(.title2)
                         .frame(width: 200)
                 }
@@ -69,9 +113,13 @@ struct MainMenuView: View {
             }
         }
         .padding()
-        // Present the RulesView as a sheet when showingRules is true
+        // Present the RulesView as a sheet
         .sheet(isPresented: $showingRules) {
             RulesView(showingRules: $showingRules)
+        }
+        // Present the SettingsView as a sheet
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(gameSettings: gameSettings, showingSettings: $showingSettings)
         }
     }
     
@@ -82,7 +130,6 @@ struct MainMenuView: View {
 
 // MARK: - Placeholder Game View
 struct GameView: View {
-    // Binding to allow the GameView to change the gameState (e.g., back to menu)
     @Binding var gameState: GameState
 
     var body: some View {
@@ -90,14 +137,9 @@ struct GameView: View {
             Text("Welcome to the Game!")
                 .font(.largeTitle)
                 .padding()
-
             Text("This is where your game content would go.")
                 .font(.title3)
-
-            Button(action: {
-                // Navigate back to the main menu
-                gameState = .menu
-            }) {
+            Button(action: { gameState = .menu }) {
                 Text("Back to Menu")
                     .font(.title2)
             }
@@ -108,58 +150,87 @@ struct GameView: View {
 }
     
 // MARK: - Rules View
-// This view displays the game rules and tips.
 struct RulesView: View {
-    // Binding to dismiss the sheet
     @Binding var showingRules: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
-            // Header with title and Done button
             HStack {
                 Text("Rules & Tips")
-                    .font(.largeTitle)
-                    .bold()
+                    .font(.largeTitle).bold()
                 Spacer()
-                Button("Done") {
-                    showingRules = false
-                }
-                .buttonStyle(.plain) // Use plain style for text-like buttons in sheets
-                .font(.title2)
+                Button("Done") { showingRules = false }
+                    .buttonStyle(.plain).font(.title2)
             }
-
-            // Rules Section
             VStack(alignment: .leading, spacing: 12) {
-                Text("Rules:")
-                    .font(.title)
-                    .fontWeight(.bold)
-                Text("1. You will be entering a room with several ducks.")
-                    .font(.title3)
-                Text("2. Remember the position and orientation of them.")
-                    .font(.title3)
-                Text("3. Identify ducks missing or of incorrect orientation.")
-                    .font(.title3)
+                Text("Rules:").font(.title).fontWeight(.bold)
+                Text("1. You will be entering a room with several ducks.").font(.title3)
+                Text("2. Remember the position and orientation of them.").font(.title3)
+                Text("3. Identify ducks missing or of incorrect orientation.").font(.title3)
             }
-            
-            // Tips Section
             VStack(alignment: .leading, spacing: 12) {
-                Text("Tips:")
-                    .font(.title)
-                    .fontWeight(.bold)
-                Text("1. Use your surroundings to orient yourself.")
-                    .font(.title3)
-                Text("2. Try to remember the ducks' positions relative to objects.")
-                    .font(.title3)
+                Text("Tips:").font(.title).fontWeight(.bold)
+                Text("1. Use your surroundings to orient yourself.").font(.title3)
+                Text("2. Try to remember the ducks' positions relative to objects.").font(.title3)
             }
-            
-            Spacer() // Pushes content to the top
+            Spacer()
         }
         .padding(40)
     }
 }
 
-// Corrected Preview
-#Preview (windowStyle: .automatic){
+// MARK: - Settings View
+struct SettingsView: View {
+    // The settings object is passed in to be modified.
+    var gameSettings: GameSettings
+    @Binding var showingSettings: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 30) {
+            HStack {
+                Text("Settings")
+                    .font(.largeTitle).bold()
+                Spacer()
+                Button("Done") { showingSettings = false }
+                    .buttonStyle(.plain).font(.title2)
+            }
+            
+            VStack(alignment: .leading, spacing: 15) {
+                Text("Difficulty Level")
+                    .font(.title).fontWeight(.bold)
+                
+                // Buttons to change the difficulty in the shared settings object
+                ForEach(Difficulty.allCases, id: \.self) { difficulty in
+                    Button(action: {
+                        gameSettings.difficulty = difficulty
+                    }) {
+                        HStack {
+                            Text(difficulty.rawValue)
+                            Spacer()
+                            // Show a checkmark next to the selected difficulty
+                            if gameSettings.difficulty == difficulty {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                        .font(.title2)
+                        .padding()
+                        .background(difficulty.color.opacity(0.2))
+                        .foregroundColor(.primary)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(40)
+    }
+}
+
+
+// MARK: - Preview
+#Preview(windowStyle: .automatic) {
     ContentView()
 }
 
