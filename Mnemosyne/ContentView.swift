@@ -1,136 +1,165 @@
 import SwiftUI
 import RealityKit
 import RealityKitContent
+import ARKit
+
+// Enum to manage the different states of the application
+enum GameState {
+    case menu
+    case game
+}
 
 struct ContentView: View {
-    // State to track the currently selected difficulty
-    @State private var selectedDifficulty: Difficulty = .easy
-
-    // Enum to define the difficulty levels, now with associated colors
-    enum Difficulty: String, CaseIterable {
-        case easy = "Easy"
-        case medium = "Medium"
-        case hard = "Hard"
-
-        // Computed property to return a color for each difficulty
-        var color: Color {
-            switch self {
-            case .easy:
-                return .green
-            case .medium:
-                return .orange
-            case .hard:
-                return .red
-            }
-        }
-    }
+    // State variable to control the current view being displayed
+    @State private var gameState: GameState = .menu
+    // State variable to control the presentation of the rules sheet
+    @State private var showingRules: Bool = false
 
     var body: some View {
-        // Main container to fill the space
-        VStack(spacing: 0) {
-            
-            // --- Top Title Section ---
-            HStack(spacing: 15) {
-                Model3D(named: "Scene", bundle: realityKitContentBundle) { model in
-                    model
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 60, height: 60)
-                } placeholder: {
-                    ProgressView()
-                        .frame(width: 60, height: 60)
-                }
-
-                Text("Mnemosyne")
-                    .font(.system(size: 48, weight: .bold))
-                
-                Spacer() // Pushes the title to the left
-            }
-            .padding(.horizontal, 40)
-            .padding(.top, 40)
-            
-            // --- Main Content Area (Two Columns) ---
-            HStack(alignment: .top, spacing: 40) {
-                
-                // --- Left Column (Rules and Tips) ---
-                VStack(alignment: .leading, spacing: 15) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Rules:")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        // Increased font size for rules
-                        Text("1. You will be entering a room with several ducks.")
-                            .font(.system(size: 20))
-                        Text("2. Remember the position and orientation of them.")
-                            .font(.system(size: 20))
-                        Text("3. Identify ducks missing or of incorrect orientation.")
-                            .font(.system(size: 20))
-                    }
-                    
-                    Divider().padding(.vertical, 10)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Tips:")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        // Increased font size for tips
-                        Text("1. Use your surroundings to orient yourself.")
-                            .font(.system(size: 20))
-                        Text("2. Try to remember the ducks' positions relative to objects.")
-                            .font(.system(size: 20))
-                    }
-                }
-                .padding(30)
-                .background(.regularMaterial, in: .rect(cornerRadius: 20))
-                .frame(maxWidth: 500) // Constrain the width of the left column
-                
-                // --- Right Column (Difficulty) ---
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("Difficulty Level")
-                        .font(.title)
-                        .fontWeight(.bold)
-
-                    // Difficulty Buttons
-                    ForEach(Difficulty.allCases, id: \.self) { difficulty in
-                        Button(action: {
-                            selectedDifficulty = difficulty
-                        }) {
-                            Text(difficulty.rawValue)
-                                .font(.title2)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(selectedDifficulty == difficulty ? difficulty.color : .gray.opacity(0.5))
-                    }
-                }
-                .frame(width: 250) // Constrain the width of the right column
-
-            } // End of main HStack
-            .padding(40)
-            
-            Spacer() // Pushes the main content to the top of the screen
-            
-            // --- Bottom Play Button ---
-            Button(action: {
-                // Add action to start the game here
-                print("Starting game with difficulty: \(selectedDifficulty.rawValue)")
-            }) {
-                Text("Play")
-                    .font(.system(size: 24, weight: .bold))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(selectedDifficulty.color)
-            .padding(40)
-            
-        } // End of main VStack
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Use a switch statement to display the appropriate view based on the game state
+        switch gameState {
+        case .menu:
+            // Pass the state bindings to the main menu view
+            MainMenuView(
+                gameState: $gameState,
+                showingRules: $showingRules
+            )
+        case .game:
+            GameView(gameState: $gameState) // Pass binding to allow returning to menu
+        }
     }
 }
 
+// MARK: - Main Menu View
+struct MainMenuView: View {
+    @Binding var gameState: GameState
+    @Binding var showingRules: Bool
 
-#Preview(windowStyle: .automatic) {
-    ContentView()
+    var body: some View {
+        VStack(spacing: 40) {
+            Text("🧠 Mnemosyne")
+                .font(.system(size: 52, weight: .bold))
+
+
+            VStack(spacing: 20) {
+                // BUG FIX: Use .buttonStyle and .tint for modern, filled buttons
+                Button(action: { gameState = .game }) {
+                    Text("Start Game")
+                        .font(.title2)
+                        .frame(width: 200)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+
+                Button(action: { showingRules = true }) {
+                    Text("Rules")
+                        .font(.title2)
+                        .frame(width: 200)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.gray)
+
+                Button(action: quitGame) {
+                    Text("Quit")
+                        .font(.title2)
+                        .frame(width: 200)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+            }
+        }
+        .padding()
+        // Present the RulesView as a sheet when showingRules is true
+        .sheet(isPresented: $showingRules) {
+            RulesView(showingRules: $showingRules)
+        }
+    }
+    
+    private func quitGame() {
+        print("Quit tapped - User should close the app from the system.")
+    }
 }
 
+// MARK: - Placeholder Game View
+struct GameView: View {
+    // Binding to allow the GameView to change the gameState (e.g., back to menu)
+    @Binding var gameState: GameState
+
+    var body: some View {
+        VStack(spacing: 30) {
+            Text("Welcome to the Game!")
+                .font(.largeTitle)
+                .padding()
+
+            Text("This is where your game content would go.")
+                .font(.title3)
+
+            Button(action: {
+                // Navigate back to the main menu
+                gameState = .menu
+            }) {
+                Text("Back to Menu")
+                    .font(.title2)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+        }
+    }
+}
+    
+// MARK: - Rules View
+// This view displays the game rules and tips.
+struct RulesView: View {
+    // Binding to dismiss the sheet
+    @Binding var showingRules: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 30) {
+            // Header with title and Done button
+            HStack {
+                Text("Rules & Tips")
+                    .font(.largeTitle)
+                    .bold()
+                Spacer()
+                Button("Done") {
+                    showingRules = false
+                }
+                .buttonStyle(.plain) // Use plain style for text-like buttons in sheets
+                .font(.title2)
+            }
+
+            // Rules Section
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Rules:")
+                    .font(.title)
+                    .fontWeight(.bold)
+                Text("1. You will be entering a room with several ducks.")
+                    .font(.title3)
+                Text("2. Remember the position and orientation of them.")
+                    .font(.title3)
+                Text("3. Identify ducks missing or of incorrect orientation.")
+                    .font(.title3)
+            }
+            
+            // Tips Section
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Tips:")
+                    .font(.title)
+                    .fontWeight(.bold)
+                Text("1. Use your surroundings to orient yourself.")
+                    .font(.title3)
+                Text("2. Try to remember the ducks' positions relative to objects.")
+                    .font(.title3)
+            }
+            
+            Spacer() // Pushes content to the top
+        }
+        .padding(40)
+    }
+}
+
+// Corrected Preview
+#Preview (windowStyle: .automatic){
+    ContentView()
+}
 
