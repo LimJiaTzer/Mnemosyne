@@ -17,7 +17,7 @@ struct ImmersiveView: View {
     let duckPlacements: [DuckPlacement] = [
         // Top row
         .init(position: [-0.8, 1.7, -1.7], orientation: .init(angle: .pi / 5, axis: [1, 0, 1])),
-        .init(position: [0.0, 1.8, -1.8], orientation: .init(angle: -.pi / 12, axis: [0, 1, 0])),
+        .init(position: [0.0, 2.0, -1.8], orientation: .init(angle: -.pi / 12, axis: [0, 1, 0])),
         .init(position: [0.7, 1.9, -1.8], orientation: .init(angle: .pi / 6, axis: [1, 0, -1])),
         // Middle row
         .init(position: [-1.0, 1.4, -1.7], orientation: .init(angle: .pi / 2.5, axis: [0, 1, 0])),

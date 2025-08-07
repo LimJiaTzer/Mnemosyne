@@ -2,6 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+		<key>UISceneConfigurations</key>
+		<dict/>
+	</dict>
+	<key>NSWorldSensingUsageDescription</key>
+	<string>Allow tracking</string>
+	<key>Privacy - Accessory Tracking Usage Description</key>
+	<string>Allow tracking</string>
+	<key>Privacy - World Sensing Usage Description</key>
+	<string>Allow plane detection</string>
+	<key>NSFileProviderDomainUsageDescription</key>
+	<string></string>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow camera usage to enable scanning of your room</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string></string>
@@ -9,14 +26,7 @@
 		<string>RubikSprayPaint-Regular.ttf</string>
 		<string>DynaPuff-VariableFont_wdth,wght.ttf</string>
 	</array>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationPreferredDefaultSceneSessionRole</key>
-		<string>UIWindowSceneSessionRoleApplication</string>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<true/>
-		<key>UISceneConfigurations</key>
-		<dict/>
-	</dict>
+	<key>NSMotionUsageDescription</key>
+	<string></string>
 </dict>
 </plist>
