@@ -84,8 +84,7 @@ struct MainMenuView: View {
                         .frame(width: 320, height: 60)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.green)
-                
+                .tint(Color(red: 34/255, green: 139/255, blue: 34/255))
                 Button(action: { showingRules = true }) {
                     Text("Rules")
                         .font(.largeTitle)

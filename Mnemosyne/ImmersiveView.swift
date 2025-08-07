@@ -2,73 +2,86 @@ import SwiftUI
 import RealityKit
 import RealityKitContent
 
+// A helper struct to hold the data for each duck's placement.
+struct DuckPlacement {
+    let position: SIMD3<Float>
+    let orientation: simd_quatf
+}
+
 struct ImmersiveView: View {
+    // A state variable to hold the loaded duck entities.
+    @State private var duckEntities: [Entity] = []
+    
+    // An array containing the fixed position and orientation for each duck.
+    // These values are estimated from your screenshot.
+    let duckPlacements: [DuckPlacement] = [
+        // Top row
+        .init(position: [-0.8, 1.7, -1.7], orientation: .init(angle: .pi / 5, axis: [1, 0, 1])),
+        .init(position: [0.0, 1.8, -1.8], orientation: .init(angle: -.pi / 12, axis: [0, 1, 0])),
+        .init(position: [0.7, 1.9, -1.8], orientation: .init(angle: .pi / 6, axis: [1, 0, -1])),
+        // Middle row
+        .init(position: [-1.0, 1.4, -1.7], orientation: .init(angle: .pi / 2.5, axis: [0, 1, 0])),
+        .init(position: [1.2, 1.5, -2.0], orientation: .init(angle: -.pi / 2, axis: [0, 1, 0])),
+        // Bottom row
+        .init(position: [-0.8, 1.1, -1.6], orientation: .init(angle: .pi, axis: [0, 0, 1])),
+        .init(position: [0.2, 0.8, -1.8], orientation: .init(angle: .pi / 2, axis: [0, 0, 1])),
+        .init(position: [0.9, 1.0, -1.9], orientation: .init(angle: -.pi / 8, axis: [1, 0, 0]))
+    ]
 
     var body: some View {
-        RealityView { content in
-            // Use a loop to create and place 5 ducks in the scene
-            for _ in 0..<5 {
-                if let duck = await createFloatingDuck() {
-                    content.add(duck)
+        RealityView(
+            make: { content in
+                // This runs once when the view is created.
+            },
+            update: { content in
+                // This runs when @State changes to add the loaded ducks.
+                for duck in duckEntities {
+                    if duck.parent == nil {
+                        content.add(duck)
+                    }
                 }
             }
+        )
+        .task {
+            // This runs in the background to load the ducks.
+            self.duckEntities = await loadDucks()
         }
     }
     
-    /// Creates a single duck entity with random positioning and animations.
-    /// - Returns: An optional configured Entity.
-    func createFloatingDuck() async -> Entity? {
-        // Load the duck model
+    /// Loads ducks based on the fixed placements array.
+    func loadDucks() async -> [Entity] {
+        var loadedDucks: [Entity] = []
+        
+        await withTaskGroup(of: Entity?.self) { group in
+            // Loop through each fixed placement.
+            for placement in duckPlacements {
+                group.addTask {
+                    return await createDuck(from: placement)
+                }
+            }
+            
+            // Collect the results as they finish loading.
+            for await duck in group {
+                if let duck {
+                    loadedDucks.append(duck)
+                }
+            }
+        }
+        
+        return loadedDucks
+    }
+
+    /// Creates a single duck entity from a specific placement data object.
+    func createDuck(from placement: DuckPlacement) async -> Entity? {
         guard let duck = try? await Entity(named: "rubber_duck", in: realityKitContentBundle) else {
             return nil
         }
         
-        // 1. SCATTERING: Generate a random position for each duck
-        // X: -2m to 2m (left/right)
-        // Y: 1m to 2m (height)
-        // Z: -1.5m to -3m (depth)
-        let randomPosition = SIMD3<Float>(
-            x: .random(in: -2...2),
-            y: .random(in: 1...2),
-            z: .random(in: -1.5...(-3))
-        )
-        duck.position = randomPosition
-        duck.scale = [0.3, 0.3, 0.3] // Made the duck a bit bigger
+        // Set position and orientation from the placement data.
+        duck.position = placement.position
+        duck.orientation = placement.orientation
         
-        // 2. ANIMATIONS: Create both spinning and floating movements
-        
-        // --- Spinning Animation (Horizontal) ---
-        // Give each duck a random spin duration to desynchronize them
-        let spinDuration = Double.random(in: 10...20)
-        let spinAnimation = FromToByAnimation<Transform>(
-            name: "spin",
-            from: .init(yaw: .pi),
-            to: .init(yaw: -.pi),
-            duration: spinDuration,
-            timing: .linear,
-        )
-
-        // --- Floating Animation (Vertical) ---
-        // Animate the duck's position up and down by 15cm
-        var floatTransform = Transform(scale: duck.scale, rotation: duck.orientation, position: duck.position)
-        floatTransform.translation.y += 0.15 // Move up by 15cm
-        
-        let floatDuration = Double.random(in: 2...4)
-        let floatAnimation = FromToByAnimation<Transform>(
-            name: "float",
-            from: .init(scale: duck.scale, rotation: duck.orientation, position: duck.position),
-            to: floatTransform,
-            duration: floatDuration,
-            timing: .easeInOut,
-            autoreverses: true // This makes it go up and then back down smoothly
-        )
-
-        // 3. PLAY ANIMATIONS: Combine and play both animations on the duck
-        if let spin = try? AnimationResource.generate(with: spinAnimation),
-           let float = try? AnimationResource.generate(with: floatAnimation) {
-            duck.playAnimation(spin)
-            duck.playAnimation(float)
-        }
+        duck.scale *= 0.05
         
         return duck
     }
