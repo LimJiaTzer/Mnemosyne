@@ -61,70 +61,58 @@ struct ContentView: View {
 // MARK: - Main Menu View
 struct MainMenuView: View {
     @Binding var gameState: GameState
-    // Access the shared settings from the environment
     var gameSettings: GameSettings
     
-    // State for presenting sheets
     @State private var showingRules: Bool = false
     @State private var showingSettings: Bool = false
-
+    
     var body: some View {
-        VStack(spacing: 40) {
-            // The title's color now changes based on the selected difficulty
-            Text("🐣Mnemosyne🧠")
-                .font(.system(size: 52, weight: .bold))
+        
+        VStack(spacing: 50) {
+            Text("🐣Mnemosyne")
+                .font(Font.custom("DynaPuff", size:100))
+                .fontWeight(.heavy)
                 .foregroundColor(.white)
-                .animation(.easeInOut, value: gameSettings.difficulty) // Animate the color change
-
-
-            VStack(spacing: 20) {
+            // Added a shadow for better readability against the 3D model
+                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 3)
+            
+            VStack(spacing: 30) {
                 Button(action: { gameState = .game }) {
                     Text("Start Game")
-                        .font(.title2)
-                        .frame(width: 200)
+                        .font(.largeTitle)
+                        .fontWeight(.semibold)
+                        .frame(width: 320, height: 60)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.green)
-
+                
                 Button(action: { showingRules = true }) {
                     Text("Rules")
-                        .font(.title2)
-                        .frame(width: 200)
+                        .font(.largeTitle)
+                        .fontWeight(.semibold)
+                        .frame(width: 320, height: 60)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.brown)
                 
-                // New button to open the Settings sheet
                 Button(action: { showingSettings = true }) {
                     Text("Settings")
-                        .font(.title2)
-                        .frame(width: 200)
+                        .font(.largeTitle)
+                        .fontWeight(.semibold)
+                        .frame(width: 320, height: 60)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.gray)
-
-                Button(action: quitGame) {
-                    Text("Quit")
-                        .font(.title2)
-                        .frame(width: 200)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
             }
+            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 3)
         }
         .padding()
-        // Present the RulesView as a sheet
         .sheet(isPresented: $showingRules) {
             RulesView(showingRules: $showingRules)
+                .sheet(isPresented: $showingSettings) {
+                    SettingsView(gameSettings: gameSettings, showingSettings: $showingSettings)
+                }
         }
-        // Present the SettingsView as a sheet
-        .sheet(isPresented: $showingSettings) {
-            SettingsView(gameSettings: gameSettings, showingSettings: $showingSettings)
-        }
-    }
-    
-    private func quitGame() {
-        print("Quit tapped - User should close the app from the system.")
     }
 }
 
