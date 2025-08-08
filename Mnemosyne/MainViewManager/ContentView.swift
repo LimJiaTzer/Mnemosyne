@@ -3,12 +3,12 @@ import RealityKit
 import RealityKitContent
 import ARKit
 
-// App-wide State Management
+// ✅ FIXED: Simplified GameState
 enum GameState {
     case menu
-    case loading
     case game
 }
+
 
 enum Difficulty: String, CaseIterable {
     case easy = "Easy"
@@ -33,104 +33,101 @@ class GameSettings {
 struct ContentView: View {
     @State private var gameState: GameState = .menu
     @State private var gameSettings = GameSettings()
-
-    var body: some View {
-        switch gameState {
-        case .menu:
-            MainMenuView(
-                gameState: $gameState,
-                gameSettings: gameSettings
-            )
-        case .loading:
-            LoadingView(gameState: $gameState)
-        case .game:
-            GameView(gameState: $gameState)
-                // Inject the settings into the environment for GameView.
-                .environment(gameSettings)
-        }
-    }
-}
-
-// MARK: - Main Menu View
-struct MainMenuView: View {
-    @Binding var gameState: GameState
-    var gameSettings: GameSettings
     
-    @State private var showingRules: Bool = false
-    @State private var showingSettings: Bool = false
-    
+    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
     var body: some View {
-        VStack(spacing: 50) {
-            Text("🐣Mnemosyne")
-                .font(Font.custom("DynaPuff", size:100))
-                .fontWeight(.heavy)
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 3)
+        Group {
+            // This switch controls the 2D window's content.
+            switch gameState {
+            case .menu:
+                MainMenuView(gameState: $gameState, gameSettings: gameSettings)
             
-            VStack(spacing: 30) {
-                Button {
-                    Task { await dismissImmersiveSpace() }
-                    gameState = .loading
-                    ARManager.shared.start()
-                } label: {
-                    Text("Start Game")
-                        .font(.largeTitle).fontWeight(.semibold).frame(width: 320, height: 60)
-                }
-                .buttonStyle(.borderedProminent).tint(Color(red: 34/255, green: 139/255, blue: 34/255))
-                
-                Button(action: { showingRules = true }) {
-                    Text("Rules")
-                        .font(.largeTitle).fontWeight(.semibold).frame(width: 320, height: 60)
-                }
-                .buttonStyle(.borderedProminent).tint(.brown)
-                
-                Button(action: { showingSettings = true }) {
-                    Text("Settings")
-                        .font(.largeTitle).fontWeight(.semibold).frame(width: 320, height: 60)
-                }
-                .buttonStyle(.borderedProminent).tint(.gray)
+            // ✅ FIXED: When the game is active, the 2D window should show the 'EndGameView'.
+            // The immersive space will show the 'GameView' separately.
+            case .game:
+                EndGameView(gameState: $gameState)
             }
-            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 3)
         }
-        .padding()
-        .sheet(isPresented: $showingRules) { RulesView(showingRules: $showingRules) }
-        .sheet(isPresented: $showingSettings) { SettingsView(gameSettings: gameSettings, showingSettings: $showingSettings) }
+        .task {
+            // Open the decorative menu space on launch.
+            await openImmersiveSpace(id: "MenuImmersiveSpace")
+        }
+        .onChange(of: gameState) {
+            Task {
+                // Always dismiss whatever is open first.
+                await dismissImmersiveSpace()
+                
+                // Then open the correct space based on the new state.
+                if gameState == .game {
+                    await openImmersiveSpace(id: "GameImmersiveSpace")
+                } else if gameState == .menu {
+                    await openImmersiveSpace(id: "MenuImmersiveSpace")
+                }
+            }
+        }
+        .onAppear {
+            // When the content view appears for the first time, start the music.
+            AudioManager.shared.startBackgroundMusic()
+        }
     }
 }
 
-// In ContentView.swift
 
-// MARK: - Loading View
+// MARK: - Your UI Views
+
+struct MainMenuView: View {
+    @Binding var gameState: GameState
+    var gameSettings: GameSettings
+    @State private var showingRules: Bool = false
+    @State private var showingSettings: Bool = false
+    
+    var body: some View {
+        VStack(spacing: 50) {
+            Text("🐣Mnemosyne").font(Font.custom("DynaPuff", size:100)).fontWeight(.heavy).foregroundColor(.white).shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 3)
+            VStack(spacing: 30) {
+                Button {
+                    // ✅ FIXED: Go directly to the game. No loading state needed.
+                    gameState = .game
+                } label: { Text("Start Game").font(.largeTitle).fontWeight(.semibold).frame(width: 320, height: 60) }.buttonStyle(.borderedProminent).tint(Color(red: 34/255, green: 139/255, blue: 34/255))
+                Button(action: { showingRules = true }) { Text("Rules").font(.largeTitle).fontWeight(.semibold).frame(width: 320, height: 60) }.buttonStyle(.borderedProminent).tint(.brown)
+                Button(action: { showingSettings = true }) { Text("Settings").font(.largeTitle).fontWeight(.semibold).frame(width: 320, height: 60) }.buttonStyle(.borderedProminent).tint(.gray)
+            }.shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 3)
+        }.padding().sheet(isPresented: $showingRules) { RulesView(showingRules: $showingRules) }.sheet(isPresented: $showingSettings) { SettingsView(gameSettings: gameSettings, showingSettings: $showingSettings) }
+    }
+}
 struct LoadingView: View {
     @Binding var gameState: GameState
-    @StateObject private var arManager = ARManager.shared
+    
+    // ✅ FIXED: Use @State for classes marked with @Observable.
+    // This correctly observes the shared instance for changes.
+    @State private var arManager = ARManager.shared
+    
+    // ✅ REMOVED: This view no longer needs to dismiss the space directly.
+    // @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Scanning Room")
-                .font(.largeTitle)
+            Spacer()
+            Text("Scanning Room").font(.largeTitle)
             
+            // The view will now correctly update when arManager.hasFoundPlanes changes.
             if !arManager.hasFoundPlanes {
                 ProgressView().progressViewStyle(.circular)
                 Text("Move your device around to detect flat surfaces like floors and tables.")
                     .font(.headline)
                     .multilineTextAlignment(.center)
             } else {
-                Text("Planes Detected!")
-                    .font(.headline)
-                    .foregroundColor(.green)
+                Text("Planes Detected!").font(.headline).foregroundColor(.green)
                 Text("Ready to start.")
             }
             
-            Spacer() // Pushes the button down
+            Spacer()
             
-            // ✅ New Cancel Button
             Button(action: {
-                // Stop the AR session to save battery.
-                arManager.stop()
-                // Go back to the main menu.
+                // The logic here is already correct.
+                ARManager.shared.stop()
                 gameState = .menu
             }) {
                 Text("Cancel")
@@ -139,10 +136,12 @@ struct LoadingView: View {
             }
             .buttonStyle(.bordered)
             .tint(.red)
+            
+            Spacer().frame(height: 20)
         }
         .padding(40)
-        .onChange(of: arManager.hasFoundPlanes) { oldValue, newValue in
-            if newValue {
+        .onChange(of: arManager.hasFoundPlanes) { _, hasFoundPlanes in
+            if hasFoundPlanes {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     gameState = .game
                 }
@@ -150,7 +149,6 @@ struct LoadingView: View {
         }
     }
 }
-
 // RulesView and SettingsView remain the same
 struct RulesView: View {
     @Binding var showingRules: Bool
@@ -208,3 +206,31 @@ struct SettingsView: View {
     }
 }
 
+// In ContentView.swift
+
+struct EndGameView: View {
+    @Binding var gameState: GameState
+    
+    // ✅ Access the single, shared instance of the GameManager.
+    @State private var gameManager = GameManager.shared
+
+    var body: some View {
+        VStack(spacing: 20) {
+            // ✅ NEW: Add a Text view to display the countdown timer.
+            // This will automatically update.
+            Text("Time Remaining: \(gameManager.countdownValue)")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Button("End Game") {
+                gameState = .menu
+                // We should also cancel the game task when the user manually ends it.
+                gameManager.resetGame() // Assuming resetGame cancels the task.
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+        }
+        .padding(30)
+        .glassBackgroundEffect()
+    }
+}

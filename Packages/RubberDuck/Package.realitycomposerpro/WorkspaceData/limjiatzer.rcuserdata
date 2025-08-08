@@ -1,15 +1,106 @@
 {
   "advancedEditorSelectedIdentifier" : "ProjectBrowser",
   "openSceneRelativePaths" : [
-    "Scene.usda"
+    "Scene.usda",
+    "RubberDuck.usda"
   ],
   "recentIdentifiers" : {
 
   },
   "sceneCameraHistory" : {
-
+    "39939705-2245-4E24-8BDD-EA07C7740AA8" : [
+      {
+        "date" : 776246433.167658,
+        "title" : "Untitled",
+        "transform" : [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0.7071069,
+          -0.70710677,
+          0,
+          0,
+          0.70710677,
+          0.7071069,
+          0,
+          3.3601532,
+          80.32797,
+          14.636669,
+          1
+        ]
+      },
+      {
+        "date" : 776246417.88815,
+        "title" : "Untitled",
+        "transform" : [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0.7071069,
+          -0.70710677,
+          0,
+          0,
+          0.70710677,
+          0.7071069,
+          0,
+          0,
+          47.48231,
+          47.48232,
+          1
+        ]
+      },
+      {
+        "date" : 776246414.316384,
+        "title" : "Untitled",
+        "transform" : [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0.7071069,
+          -0.70710677,
+          0,
+          0,
+          0.70710677,
+          0.7071069,
+          0,
+          0,
+          0.48507336,
+          0.48507342,
+          1
+        ]
+      },
+      {
+        "date" : 776246412.458972,
+        "title" : "Untitled",
+        "transform" : [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0.7071069,
+          -0.70710677,
+          0,
+          0,
+          0.70710677,
+          0.7071069,
+          0,
+          0,
+          1.1227448,
+          1.1227449,
+          1
+        ]
+      }
+    ]
   },
   "sceneViewportBackgroundColors" : {
 
-  }
+  },
+  "selectedSceneRelativePath" : "RubberDuck.usda"
 }

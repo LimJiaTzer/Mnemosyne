@@ -117,6 +117,3 @@ enum DuckHelpers {
         return duck
     }
 }
-
-
-

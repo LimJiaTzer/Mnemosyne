@@ -1,26 +1,21 @@
-//
-//  MnemosyneApp.swift
-//  Mnemosyne
-//
-//  Created by Lim Jia Tzer on 6/8/25.
-//
+// MnemosyneApp.swift
 
 import SwiftUI
 
 @main
 struct MnemosyneApp: App {
-    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .task{
-                    await openImmersiveSpace(id: "ImmersiveSpace")
-                }
+            // ✅ CHANGED: Remove the .task modifier that opened the space automatically.
+            // The ContentView will now control when the space is opened and closed.
         }
-        ImmersiveSpace(id: "ImmersiveSpace"){
+        ImmersiveSpace(id: "MenuImmersiveSpace"){
             ImmersiveView()
+        }
+        ImmersiveSpace(id: "GameImmersiveSpace") {
+            GameView() // Your interactive game view
         }
     }
 }
-

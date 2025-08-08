@@ -10,5 +10,13 @@
 
 def Xform "Root"
 {
+    def "rubber_duck" (
+        active = true
+        prepend references = @rubber_duck.usdz@
+    )
+    {
+        float3 xformOp:scale = (0.1, 0.1, 0.1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
 }
 
